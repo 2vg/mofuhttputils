@@ -8,7 +8,15 @@ This library just generates a character string.
 
 So I thought that it could be used with other HTTP servers, so it was released as a module.
 
-## API
+## require
+- Nim => 0.18.0
+
+## install
+```shell
+nimble install https://github.com/2vg/mofuhttputils
+```
+
+## api
 
 - `getServerTime(): string`
 

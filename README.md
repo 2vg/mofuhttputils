@@ -28,7 +28,7 @@ It is UTC standard.
 
 Returns the current cached server time.
 
-- `updateServerTime(): string`
+- `updateServerTime()`
 
 Updates the cached time variable with the current time.
 

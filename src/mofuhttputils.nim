@@ -3,6 +3,7 @@
 # useful minimal http server utils.
 
 import times, httpcore
+export httpcore.`[]`
 
 const
   HTTP100* = "HTTP/1.1 100 Continue" & "\r\L"

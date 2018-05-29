@@ -102,7 +102,7 @@ proc addBody*(str, mime, body: string): string {.inline.} =
   result.add(str)
   result.add("Content-Type: ")
   result.add(mime)
-  result.add(";\r\LContent-Length: ")
+  result.add("\r\LContent-Length: ")
   result.add(body.len)
   result.add("\r\L\r\L")
   result.add(body)
@@ -140,7 +140,7 @@ proc makeResp*(statusLine: string, headers: openArray[tuple[name: string, value:
   result = makeRespNoBody(statusLine)
   result.add("Content-Type: ")
   result.add(mime)
-  result.add(";\r\LContent-Length: ")
+  result.add("\r\LContent-Length: ")
   result.add(body.len)
   result.add("\r\L")
 
@@ -168,7 +168,7 @@ proc makeResp*(statusLine: string, headers: HttpHeaders, mime, body: string): st
   result = makeRespNoBody(statusLine)
   result.add("Content-Type: ")
   result.add(mime)
-  result.add(";\r\LContent-Length: ")
+  result.add("\r\LContent-Length: ")
   result.add(body.len)
   result.add("\r\L")
 

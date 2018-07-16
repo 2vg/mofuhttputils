@@ -1,8 +1,4 @@
-# mofuhttputils
-# Copyright 2vg
-# useful minimal http server utils.
-
-import times, httpcore
+import times, httpcore, strformat
 export httpcore.`[]`
 
 const
@@ -66,8 +62,7 @@ const
   HTTP509* = "HTTP/1.1 509 Bandwidth Limit Exceeded" & "\r\L"
   HTTP510* = "HTTP/1.1 510 Not Extended" & "\r\L"
 
-const serverName {.strdefine.} = "myserver"
-
+var serverName {.threadvar.}: string
 var serverTime {.threadvar.}: string
 
 proc getServerTime*(): string =
@@ -79,140 +74,93 @@ proc getGlobalServerTime*(): string =
 proc updateServerTime*() =
   serverTime = getServerTime()
 
-proc addHeaders*(body: string, headers: openArray[tuple[name: string, value: string]]): string {.inline.}=
+proc setServerName*(name: string) =
+  serverName = name
+
+proc headerGen*(headers: openArray[tuple[name: string, value: string]]): string {.inline.} =
   result = ""
-  result.add(body)
   for v in headers:
-    result.add(v.name)
-    result.add(": ")
-    result.add(v.value)
-    result.add("\r\L")
+    result.add(fmt("{v.name}: {v.value}\r\l"))
 
-proc addHeaders*(body: string, headers: HttpHeaders): string {.inline.}=
+proc headerGen*(headers: HttpHeaders): string {.inline.} =
   result = ""
-  result.add(body)
   for v in headers.pairs:
-    result.add(v.key)
-    result.add(": ")
-    result.add(v.value)
-    result.add("\r\L")
+    result.add(fmt("{v.key}: {v.value}\r\l"))
 
-proc addBody*(str, mime, body: string): string {.inline.} =
-  result = ""
-  result.add(str)
-  result.add("Content-Type: ")
-  result.add(mime)
-  result.add("\r\LContent-Length: ")
-  result.add(body.len)
-  result.add("\r\L\r\L")
-  result.add(body)
+proc makeResp*(statusLine, mime, body: string): string {.inline.} =
+  result =
+    fmt("{statusLine}" &
+        "Server: {serverName}\r\l" &
+        "Date: {serverTime}\r\l" &
+        "Content-Type: {mime}\r\l" &
+        "Content-Length: {body.len}\r\l\r\l" &
+        "{body}")
 
-proc addBody*(str, mime, body, charset: string): string {.inline.} =
-  result = ""
-  result.add(str)
-  result.add("Content-Type: ")
-  result.add(mime)
-  result.add("; charset=")
-  result.add(charset)
-  result.add("\r\LContent-Length: ")
-  result.add(body.len)
-  result.add("\r\L\r\L")
-  result.add(body)
+proc makeResp*(statusLine, mime, body, charset: string): string {.inline.} =
+  result =
+    fmt("{statusLine}" &
+        "Server: {serverName}\r\l" &
+        "Date: {serverTime}\r\l" &
+        "Content-Type: {mime}; charset={charset}\r\l" &
+        "Content-Length: {body.len}\r\l\r\l" &
+        "{body}")
 
-proc makeRespNoBody*(statusLine: string): string {.inline.}=
-  result = statusLine
-  result.add("Server: ")
-  result.add(serverName)
-  result.add("\r\LDate: ")
-  result.add(serverTime)
-  result.add("\r\L")
-  #result.add("\r\LConnection: keep-alive\r\L")
+proc makeResp*(statusLine, mime, body: string,
+               headers: openArray[tuple[name: string, value: string]]): string {.inline.} =
+  result =
+    fmt("{statusLine}" &
+        "Server: {serverName}\r\l" &
+        "Date: {serverTime}\r\l" &
+        "Content-Type: {mime}\r\l" &
+        "Content-Length: {body.len}\r\l" &
+        "{headerGen(headers)}" &
+        "\r\l" &
+        "{body}")
 
-proc makeResp*(statusLine, mime, body: string): string {.inline.}=
-  result = makeRespNoBody(statusLine)
-  return result.addBody(mime, body)
+proc makeResp*(statusLine, mime, body: string,
+               headers: HttpHeaders): string {.inline.} =
+  result =
+    fmt("{statusLine}" &
+        "Server: {serverName}\r\l" &
+        "Date: {serverTime}\r\l" &
+        "Content-Type: {mime}\r\l" &
+        "Content-Length: {body.len}\r\l" &
+        "{headerGen(headers)}" &
+        "\r\l" &
+        "{body}")
 
-proc makeResp*(statusLine, mime, body, charset: string): string {.inline.}=
-  result = makeRespNoBody(statusLine)
-  return result.addBody(mime, body, charset)
+proc makeResp*(statusLine, mime, body, charset: string,
+               headers: openArray[tuple[name: string, value: string]]): string {.inline.} =
+  result =
+    fmt("{statusLine}" &
+        "Server: {serverName}\r\l" &
+        "Date: {serverTime}\r\l" &
+        "Content-Type: {mime}; charset={charset}\r\l" &
+        "Content-Length: {body.len}\r\l" &
+        "{headerGen(headers)}" &
+        "\r\l" &
+        "{body}")
 
-proc makeResp*(statusLine: string, headers: openArray[tuple[name: string, value: string]], mime, body: string): string {.inline.}=
-  result = makeRespNoBody(statusLine)
-  result.add("Content-Type: ")
-  result.add(mime)
-  result.add("\r\LContent-Length: ")
-  result.add(body.len)
-  result.add("\r\L")
-
-  result = result.addHeaders(headers)
-
-  result.add("\r\L")
-  result.add(body)
-
-proc makeResp*(statusLine: string, headers: openArray[tuple[name: string, value: string]], mime, body, charset: string): string {.inline.}=
-  result = makeRespNoBody(statusLine)
-  result.add("Content-Type: ")
-  result.add(mime)
-  result.add("; charset=")
-  result.add(charset)
-  result.add("\r\LContent-Length: ")
-  result.add(body.len)
-  result.add("\r\L")
-
-  result = result.addHeaders(headers)
-
-  result.add("\r\L")
-  result.add(body)
-
-proc makeResp*(statusLine: string, headers: HttpHeaders, mime, body: string): string {.inline.} =
-  result = makeRespNoBody(statusLine)
-  result.add("Content-Type: ")
-  result.add(mime)
-  result.add("\r\LContent-Length: ")
-  result.add(body.len)
-  result.add("\r\L")
-
-  result = result.addHeaders(headers)
-
-  result.add("\r\L")
-  result.add(body)
-
-proc makeResp*(statusLine: string, headers: HttpHeaders, mime, body, charset: string): string {.inline.} =
-  result = makeRespNoBody(statusLine)
-  result.add("Content-Type: ")
-  result.add(mime)
-  result.add("; charset=")
-  result.add(charset)
-  result.add("\r\LContent-Length: ")
-  result.add(body.len)
-  result.add("\r\L")
-
-  result = result.addHeaders(headers)
-
-  result.add("\r\L")
-  result.add(body)
+proc makeResp*(statusLine, mime, body, charset: string,
+               headers: HttpHeaders): string {.inline.} =
+  result =
+    fmt("{statusLine}" &
+        "Server: {serverName}\r\l" &
+        "Date: {serverTime}\r\l" &
+        "Content-Type: {mime}; charset={charset}\r\l" &
+        "Content-Length: {body.len}\r\l" &
+        "{headerGen(headers)}" &
+        "\r\l" &
+        "{body}")
 
 proc redirectTo*(URL: string): string {.inline.} =
-  result = addHeaders(makeRespNoBody(HTTP301), @[("Content-Length", "0"), ("Location", URL)])
-  result.add("\r\L")
+  result = makeResp(HTTP301, "text/html", "", [("Location", URL)])
 
 proc badRequest*(): string {.inline.} =
-  result = makeResp(
-    HTTP400,
-    "text/html",
-    "400 Bad Request"
-  )
+  result = makeResp(HTTP400, "text/html", "")
 
 proc notFound*(): string {.inline.} =
-  result = makeResp(
-    HTTP404,
-    "text/html",
-    "404 Not Found"
-  )
+  result = makeResp(HTTP404, "text/html", "404 Not Found")
 
 proc bodyTooLarge*(): string {.inline.}=
-  result = makeResp(
-    HTTP413,
-    "text/html",
-    "413 Request Entity Too Large"
-  )
+  result = makeResp(HTTP413, "text/html", "413 Request Entity Too Large")

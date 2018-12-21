@@ -77,6 +77,22 @@ proc updateServerTime*() =
 proc setServerName*(name: string) =
   serverName = name
 
+proc baseResp*(statusLine, mime, body: string, len: int): string {.inline.} =
+  result =
+    fmt("{statusLine}" &
+        "Server: {serverName}\r\l" &
+        "Date: {serverTime}\r\l" &
+        "Content-Type: {mime}\r\l" &
+        "Content-Length: {len}\r\l")
+
+proc baseResp*(statusLine, mime, body: string, len: int, charset: string): string {.inline.} =
+  result =
+    fmt("{statusLine}" &
+        "Server: {serverName}\r\l" &
+        "Date: {serverTime}\r\l" &
+        "Content-Type: {mime}; charset={charset}\r\l" &
+        "Content-Length: {len}\r\l")
+
 proc headerGen*(headers: openArray[tuple[name: string, value: string]]): string {.inline.} =
   result = ""
   for v in headers:

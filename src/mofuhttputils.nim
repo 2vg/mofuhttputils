@@ -77,7 +77,7 @@ proc updateServerTime*() =
 proc setServerName*(name: string) =
   serverName = name
 
-proc baseResp*(statusLine, mime, body: string, len: int): string {.inline.} =
+proc baseResp*(statusLine, mime, len: int): string {.inline.} =
   result =
     fmt("{statusLine}" &
         "Server: {serverName}\r\l" &
@@ -85,7 +85,7 @@ proc baseResp*(statusLine, mime, body: string, len: int): string {.inline.} =
         "Content-Type: {mime}\r\l" &
         "Content-Length: {len}\r\l")
 
-proc baseResp*(statusLine, mime, body: string, len: int, charset: string): string {.inline.} =
+proc baseResp*(statusLine, mime, len: int, charset: string): string {.inline.} =
   result =
     fmt("{statusLine}" &
         "Server: {serverName}\r\l" &
